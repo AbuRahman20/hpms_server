@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
     // Identification
     registerNo: { type: String, unique: true },
     password: { type: String },
-    role: Number,
+    role: { type: String },
     name: { type: String },
     phone: { type: Number },
     aadharNo: { type: Number },
