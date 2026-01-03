@@ -147,7 +147,7 @@ app.put('/updateUser', async (req, res) => {
 app.get('/fetchhosteldata', async (req, res) => {
 
     try {
-        const data = await hostelModel.find()
+        const data = await hostelModel.find();
         res.json(data)
     } catch (error) {
         console.error("Error in fetching hostel data : ", error);
