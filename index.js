@@ -145,7 +145,7 @@ app.put('/updateUser', async (req, res) => {
 // Hostel fetching coding
 
 app.get('/fetchhosteldata', async (req, res) => {
-
+console.log('first')
     try {
         const data = await hostelModel.find();
         res.json(data)
