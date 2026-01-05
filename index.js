@@ -23,10 +23,13 @@ app.listen(PORT, () => { console.log(`Server running on port ${PORT}`) });
 // ----------------------------------------------------------------------------------------------------
 
 // Login coding 
+
 app.post('/user', async (req, res) => {
+
     const { registerNo, password } = req.body;
 
     try {
+
         const userExist = await UserModel.findOne({ registerNo });
 
         if (!userExist) {
@@ -36,8 +39,15 @@ app.post('/user', async (req, res) => {
         if (userExist.password !== password) {
             return res.status(401).json({ message: 'Password incorrect' });
         }
-
-        return res.status(200).json({ message: 'Login successful' });
+ 
+        return res.status(200).json({
+            message: 'Login successful', 
+            user: {
+                registerNo: userExist.registerNo,
+                role: userExist.role,
+                name: userExist.name
+            }
+        });
 
     } catch (error) {
         console.error('Error during login:', error);
@@ -99,14 +109,14 @@ app.get('/fetchdata', async (req, res) => {
 //  User Deleting coding
 
 app.post('/deleteUser', async (req, res) => {
-    const {  registerNo } = req.body;
+    const { registerNo } = req.body;
     try {
         await UserModel.deleteOne({ registerNo: registerNo });
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error("Error in deleting user : ", error);
         res.json({ message: 'Internal server error' });
-    }   
+    }
 });
 // ----------------------------------------------------------------------------------------------------
 // user update coding
@@ -114,26 +124,26 @@ app.post('/deleteUser', async (req, res) => {
 app.put('/updateUser', async (req, res) => {
     console.log(req.body)
     try {
-    const { registerNo, ...rest } = req.body;
-        if(!registerNo){
+        const { registerNo, ...rest } = req.body;
+        if (!registerNo) {
             return res.status(400).json({ message: 'Register No is required' });
         }
-        const updateData={ ...rest };
+        const updateData = { ...rest };
         if (registerNo && registerNo.trim() !== '') {
             updateData.registerNo = registerNo;
         }
         const updatedUser = await UserModel.findOneAndUpdate(
-            { registerNo },          
-            { $set: updateData },    
-            { new: true }            
+            { registerNo },
+            { $set: updateData },
+            { new: true }
         );
-         if (!updatedUser) {
+        if (!updatedUser) {
             return res.status(404).json({ message: "User not found" });
         }
         res.status(200).json({
             message: "User updated successfully",
             user: updatedUser
-            
+
         });
     } catch (error) {
         console.error("Update error:", error);
@@ -145,7 +155,7 @@ app.put('/updateUser', async (req, res) => {
 // Hostel fetching coding
 
 app.get('/fetchhosteldata', async (req, res) => {
-console.log('first')
+
     try {
         const data = await hostelModel.find();
         res.json(data)
