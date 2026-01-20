@@ -39,9 +39,9 @@ app.post('/user', async (req, res) => {
         if (userExist.password !== password) {
             return res.status(401).json({ message: 'Password incorrect' });
         }
- 
+
         return res.status(200).json({
-            message: 'Login successful', 
+            message: 'Login successful',
             user: {
                 registerNo: userExist.registerNo,
                 role: userExist.role,
@@ -53,6 +53,21 @@ app.post('/user', async (req, res) => {
         console.error('Error during login:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
+});
+
+// ----------------------------------------------------------------------------------------------------
+// Register Modal Coding
+app.post('/addUser', async (req, res) => {
+    const { registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode } = req.body;
+    const exists = await UserModel.findOne({ registerNo });
+    if (exists) {
+        return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const user = new UserModel({ registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode });
+    await user.save();
+
+    res.status(201).json({ message: 'User created' });
 });
 
 // ----------------------------------------------------------------------------------------------------
@@ -162,5 +177,18 @@ app.get('/fetchhosteldata', async (req, res) => {
     } catch (error) {
         console.error("Error in fetching hostel data : ", error);
         return res.status(500).json({ message: 'Internal server error' });
+    }
+})
+
+// ----------------------------------------------------------------------------------------------------
+//  Hostel Deleting coding
+app.post('deletehostel', async (req, res) => {
+    const { hostelId } = req.body
+     try {
+        await UserModel.deleteOne({ hostelId: hostelId });
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        console.error("Error in deleting user : ", error);
+        res.json({ message: 'Internal server error' });
     }
 })
