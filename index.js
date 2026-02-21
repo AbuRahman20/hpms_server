@@ -56,21 +56,22 @@ app.post('/user', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------------------------------
+
 // Register Modal Coding
+
 app.post('/addUser', async (req, res) => {
     const { registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode } = req.body;
     const exists = await UserModel.findOne({ registerNo });
     if (exists) {
         return res.status(400).json({ message: 'User already exists' });
     }
-
     const user = new UserModel({ registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode });
     await user.save();
-
     res.status(201).json({ message: 'User created' });
 });
 
 // ----------------------------------------------------------------------------------------------------
+
 //  User Adding coding
 
 app.post('/addUser', async (req, res) => {
@@ -121,6 +122,7 @@ app.get('/fetchdata', async (req, res) => {
 })
 
 // ----------------------------------------------------------------------------------------------------
+
 //  User Deleting coding
 
 app.post('/deleteUser', async (req, res) => {
@@ -133,11 +135,13 @@ app.post('/deleteUser', async (req, res) => {
         res.json({ message: 'Internal server error' });
     }
 });
+
 // ----------------------------------------------------------------------------------------------------
-// user update coding
+
+// User update coding
 
 app.put('/updateUser', async (req, res) => {
-    console.log(req.body)
+
     try {
         const { registerNo, ...rest } = req.body;
         if (!registerNo) {
@@ -165,12 +169,12 @@ app.put('/updateUser', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 })
+
 // ----------------------------------------------------------------------------------------------------
 
 // Hostel fetching coding
 
 app.get('/fetchhosteldata', async (req, res) => {
-
     try {
         const data = await hostelModel.find();
         res.json(data)
@@ -181,22 +185,24 @@ app.get('/fetchhosteldata', async (req, res) => {
 })
 
 // ----------------------------------------------------------------------------------------------------
+
 //  Hostel Deleting coding
 
- app.post('deletehostel', async (req, res) => {
-     const { hostelId } = req.body
-     try {
-       await UserModel.deleteOne({ hostelId: hostelId });
+app.post('deletehostel', async (req, res) => {
+    const { hostelId } = req.body
+    try {
+        await UserModel.deleteOne({ hostelId: hostelId });
         res.json({ message: 'User deleted successfully' });
-     } catch (error) {
+    } catch (error) {
         console.error("Error in deleting user : ", error);
-         res.json({ message: 'Internal server error' });
-     }
+        res.json({ message: 'Internal server error' });
+    }
 })
 
 // ----------------------------------------------------------------------------------------------------
-// Room Menu
+
 // fetch Get all hostels data for room drop down
+
 app.get('/api/hostels', async (req, res) => {
     try {
         const hostels = await hostelModel.find();
@@ -207,19 +213,17 @@ app.get('/api/hostels', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------------------------------
+
 // drop down hostel id click and go to the room
+
 app.get('/api/rooms/:hostelId', async (req, res) => {
     try {
         const { hostelId } = req.params;
-
         const rooms = await roomModel.find({ hostelId });
-
         if (rooms.length === 0) {
             return res.status(404).json({ message: "No rooms found for this hostel" });
         }
-
         res.status(200).json(rooms);
-
     } catch (error) {
         res.status(500).json({ message: "Error fetching rooms" });
     }
@@ -228,6 +232,7 @@ app.get('/api/rooms/:hostelId', async (req, res) => {
 // ----------------------------------------------------------------------------------------------------
 
 // Bed Menu
+
 // Get All Hostels (for first dropdown)
 
 app.get('/api/hostels', async (req, res) => {
@@ -238,7 +243,6 @@ app.get('/api/hostels', async (req, res) => {
         res.status(500).json({ message: "Error fetching hostels" });
     }
 });
-
 
 // ----------------------------------------------------------------------------------------------------
 
@@ -253,8 +257,8 @@ app.get('/api/rooms/:hostelId', async (req, res) => {
     }
 });
 
-
 // ----------------------------------------------------------------------------------------------------
+
 // Get Beds by Room ID (MAIN API)
 
 app.get('/api/beds/:roomId', async (req, res) => {
@@ -266,6 +270,4 @@ app.get('/api/beds/:roomId', async (req, res) => {
     }
 });
 
-
 // ----------------------------------------------------------------------------------------------------
-
