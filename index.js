@@ -182,13 +182,92 @@ app.get('/fetchhosteldata', async (req, res) => {
 
 // ----------------------------------------------------------------------------------------------------
 //  Hostel Deleting coding
-app.post('deletehostel', async (req, res) => {
-    const { hostelId } = req.body
+
+ app.post('deletehostel', async (req, res) => {
+     const { hostelId } = req.body
      try {
-        await UserModel.deleteOne({ hostelId: hostelId });
+       await UserModel.deleteOne({ hostelId: hostelId });
         res.json({ message: 'User deleted successfully' });
-    } catch (error) {
+     } catch (error) {
         console.error("Error in deleting user : ", error);
-        res.json({ message: 'Internal server error' });
-    }
+         res.json({ message: 'Internal server error' });
+     }
 })
+
+// ----------------------------------------------------------------------------------------------------
+// Room Menu
+// fetch Get all hostels data for room drop down
+app.get('/api/hostels', async (req, res) => {
+    try {
+        const hostels = await hostelModel.find();
+        res.status(200).json(hostels);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch hostels" });
+    }
+});
+
+// ----------------------------------------------------------------------------------------------------
+// drop down hostel id click and go to the room
+app.get('/api/rooms/:hostelId', async (req, res) => {
+    try {
+        const { hostelId } = req.params;
+
+        const rooms = await roomModel.find({ hostelId });
+
+        if (rooms.length === 0) {
+            return res.status(404).json({ message: "No rooms found for this hostel" });
+        }
+
+        res.status(200).json(rooms);
+
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching rooms" });
+    }
+});
+
+// ----------------------------------------------------------------------------------------------------
+
+// Bed Menu
+// Get All Hostels (for first dropdown)
+
+app.get('/api/hostels', async (req, res) => {
+    try {
+        const hostels = await hostelModel.find();
+        res.json(hostels);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching hostels" });
+    }
+});
+
+
+// ----------------------------------------------------------------------------------------------------
+
+// Get Rooms by Hostel ID (for second dropdown)
+
+app.get('/api/rooms/:hostelId', async (req, res) => {
+    try {
+        const rooms = await roomModel.find({ hostelId: req.params.hostelId });
+        res.json(rooms);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching rooms" });
+    }
+});
+
+
+// ----------------------------------------------------------------------------------------------------
+// Get Beds by Room ID (MAIN API)
+
+app.get('/api/beds/:roomId', async (req, res) => {
+    try {
+        const beds = await bedModel.find({ roomId: req.params.roomId });
+        res.json(beds);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching beds" });
+    }
+});
+
+
+// ----------------------------------------------------------------------------------------------------
+
+
+
