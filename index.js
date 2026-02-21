@@ -1,273 +1,44 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
-const UserModel = require("./models/user");
-const hostelModel = require("./models/hostel");
-const roomModel = require("./models/room");
-const bedModel = require("./models/bed");
-const paymentModel = require("./models/payment");
-const feeStructureModel = require("./models/feeStructure");
-const app = express();
 
-// Middleware
+// --------------------------------------------------------------------------------------------------------------------------------
+
+// Common Routes
+const authRoutes = require("./routes/common/authRoutes");
+
+// Admin Routes
+const userAdministrationRoutes = require("./routes/admin/userAdministration");
+const hostelManagementRoutes = require("./routes/admin/hostelManagement");
+const roomAllocationRoutes = require("./routes/admin/roomAllocation");
+const bedManagementRoutes = require("./routes/admin/bedManagement");
+
+// Student Routes
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
+const app = express();
 app.use(cors());
 app.use(express.json());
-
-// Connect DB
 connectDB();
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
+// Common Routes
+app.use("/", authRoutes);  
+
+// Admin Routes
+app.use("/", userAdministrationRoutes);      
+app.use("/", hostelManagementRoutes);    
+app.use("/", roomAllocationRoutes);      
+app.use("/", bedManagementRoutes); 
+
+// Student Routes
+
+// --------------------------------------------------------------------------------------------------------------------------------
 
 const PORT = 5000;
 
-app.listen(PORT, () => { console.log(`Server running on port ${PORT}`) });
-
-// ----------------------------------------------------------------------------------------------------
-
-// Login coding 
-
-app.post('/user', async (req, res) => {
-
-    const { registerNo, password } = req.body;
-
-    try {
-
-        const userExist = await UserModel.findOne({ registerNo });
-
-        if (!userExist) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        if (userExist.password !== password) {
-            return res.status(401).json({ message: 'Password incorrect' });
-        }
-
-        return res.status(200).json({
-            message: 'Login successful',
-            user: {
-                registerNo: userExist.registerNo,
-                role: userExist.role,
-                name: userExist.name
-            }
-        });
-
-    } catch (error) {
-        console.error('Error during login:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
 });
-
-// ----------------------------------------------------------------------------------------------------
-
-// Register Modal Coding
-
-app.post('/addUser', async (req, res) => {
-    const { registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode } = req.body;
-    const exists = await UserModel.findOne({ registerNo });
-    if (exists) {
-        return res.status(400).json({ message: 'User already exists' });
-    }
-    const user = new UserModel({ registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode });
-    await user.save();
-    res.status(201).json({ message: 'User created' });
-});
-
-// ----------------------------------------------------------------------------------------------------
-
-//  User Adding coding
-
-app.post('/addUser', async (req, res) => {
-
-    const { registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode } = req.body
-
-    if (!registerNo || !name || !phone || !password) {
-        return res.status(400).json({
-            message: 'Required fields are missing'
-        });
-    }
-    const existingUser = await UserModel.findOne({ registerNo })
-
-    if (existingUser) {
-        return res.status(409).json({
-            message: 'User already exists'
-        });
-    }
-
-    try {
-        const newUser = new UserModel({ registerNo, name, department, year, phone, password, role, aadharNo, semester, section, academicYear, graduate, fatherName, religion, category, address, state, district, pincode })
-        await newUser.save()
-
-        res.status(201).json({
-            message: 'User added successfully',
-            userId: newUser._id
-        });
-
-    } catch (error) {
-        console.error('Error during add user: ', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-})
-
-// ----------------------------------------------------------------------------------------------------
-
-// User fetching coding
-
-app.get('/fetchdata', async (req, res) => {
-
-    try {
-        const data = await UserModel.find()
-        res.json(data)
-    } catch (error) {
-        console.error("Error in fetching user data : ", error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-})
-
-// ----------------------------------------------------------------------------------------------------
-
-//  User Deleting coding
-
-app.post('/deleteUser', async (req, res) => {
-    const { registerNo } = req.body;
-    try {
-        await UserModel.deleteOne({ registerNo: registerNo });
-        res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-        console.error("Error in deleting user : ", error);
-        res.json({ message: 'Internal server error' });
-    }
-});
-
-// ----------------------------------------------------------------------------------------------------
-
-// User update coding
-
-app.put('/updateUser', async (req, res) => {
-
-    try {
-        const { registerNo, ...rest } = req.body;
-        if (!registerNo) {
-            return res.status(400).json({ message: 'Register No is required' });
-        }
-        const updateData = { ...rest };
-        if (registerNo && registerNo.trim() !== '') {
-            updateData.registerNo = registerNo;
-        }
-        const updatedUser = await UserModel.findOneAndUpdate(
-            { registerNo },
-            { $set: updateData },
-            { new: true }
-        );
-        if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(200).json({
-            message: "User updated successfully",
-            user: updatedUser
-
-        });
-    } catch (error) {
-        console.error("Update error:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-})
-
-// ----------------------------------------------------------------------------------------------------
-
-// Hostel fetching coding
-
-app.get('/fetchhosteldata', async (req, res) => {
-    try {
-        const data = await hostelModel.find();
-        res.json(data)
-    } catch (error) {
-        console.error("Error in fetching hostel data : ", error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-})
-
-// ----------------------------------------------------------------------------------------------------
-
-//  Hostel Deleting coding
-
-app.post('deletehostel', async (req, res) => {
-    const { hostelId } = req.body
-    try {
-        await UserModel.deleteOne({ hostelId: hostelId });
-        res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-        console.error("Error in deleting user : ", error);
-        res.json({ message: 'Internal server error' });
-    }
-})
-
-// ----------------------------------------------------------------------------------------------------
-
-// fetch Get all hostels data for room drop down
-
-app.get('/api/hostels', async (req, res) => {
-    try {
-        const hostels = await hostelModel.find();
-        res.status(200).json(hostels);
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch hostels" });
-    }
-});
-
-// ----------------------------------------------------------------------------------------------------
-
-// drop down hostel id click and go to the room
-
-app.get('/api/rooms/:hostelId', async (req, res) => {
-    try {
-        const { hostelId } = req.params;
-        const rooms = await roomModel.find({ hostelId });
-        if (rooms.length === 0) {
-            return res.status(404).json({ message: "No rooms found for this hostel" });
-        }
-        res.status(200).json(rooms);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching rooms" });
-    }
-});
-
-// ----------------------------------------------------------------------------------------------------
-
-// Bed Menu
-
-// Get All Hostels (for first dropdown)
-
-app.get('/api/hostels', async (req, res) => {
-    try {
-        const hostels = await hostelModel.find();
-        res.json(hostels);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching hostels" });
-    }
-});
-
-// ----------------------------------------------------------------------------------------------------
-
-// Get Rooms by Hostel ID (for second dropdown)
-
-app.get('/api/rooms/:hostelId', async (req, res) => {
-    try {
-        const rooms = await roomModel.find({ hostelId: req.params.hostelId });
-        res.json(rooms);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching rooms" });
-    }
-});
-
-// ----------------------------------------------------------------------------------------------------
-
-// Get Beds by Room ID (MAIN API)
-
-app.get('/api/beds/:roomId', async (req, res) => {
-    try {
-        const beds = await bedModel.find({ roomId: req.params.roomId });
-        res.json(beds);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching beds" });
-    }
-});
-
-// ----------------------------------------------------------------------------------------------------
