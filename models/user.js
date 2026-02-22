@@ -5,10 +5,16 @@ const userSchema = new mongoose.Schema({
     // Identification
     registerNo: { type: String, unique: true },
     password: { type: String },
-    role: { type: String },
+    role: {
+        type: String,
+        enum: ["student", "admin"],
+        required: true
+    },
+
+    // Basic Details
     name: { type: String },
-    phone: { type: Number },
-    aadharNo: { type: Number },
+    phone: { type: String },
+    aadharNo: { type: String },
 
     // Academic Details
     department: { type: String },
@@ -27,7 +33,7 @@ const userSchema = new mongoose.Schema({
     address: { type: String },
     state: { type: String },
     district: { type: String },
-    pinCode: { type: Number },
+    pinCode: { type: String },
 
 }, { timestamps: true });
 
