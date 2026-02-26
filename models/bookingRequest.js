@@ -1,3 +1,5 @@
+// models/BookingRequest.js
+
 const mongoose = require("mongoose");
 
 const bookingRequestSchema = new mongoose.Schema({
@@ -11,16 +13,20 @@ const bookingRequestSchema = new mongoose.Schema({
         ref: "Hostel",
         required: true
     },
-    preferredRoomType: { type: String },
-    message: {type: String},
+    roomId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Room",
+        required: true
+    },
+    bedId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Bed",
+        required: true
+    },
     status: {
         type: String,
         enum: ["Pending", "Approved", "Rejected"],
         default: "Pending"
-    },
-    requestedDate: {
-        type: Date,
-        default: Date.now
     }
 }, { timestamps: true });
 
