@@ -3,7 +3,7 @@ const router = express.Router();
 const BookingRequest = require("../models/BookingRequest");
 
 
-// ✅ 1. Create Booking Request (Student)
+//  Create Booking Request (Student)
 router.post("/", async (req, res) => {
     try {
         const { studentId, hostelId, roomId, bedId } = req.body;
@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
 });
 
 
-// ✅ 2. Get My Booking Requests (Student View)
+//  Get My Booking Requests (Student View)
 router.get("/student/:studentId", async (req, res) => {
     try {
         const bookings = await BookingRequest.find({
@@ -46,7 +46,7 @@ router.get("/student/:studentId", async (req, res) => {
 });
 
 
-// ✅ 3. Get All Booking Requests (Admin View)
+//  Get All Booking Requests (Admin View)
 router.get("/", async (req, res) => {
     try {
         const bookings = await BookingRequest.find()
