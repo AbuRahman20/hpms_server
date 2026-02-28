@@ -4,6 +4,7 @@ const Hostel = require('../../models/hostel');
 const Room = require('../../models/room');
 const Bed = require('../../models/bed');
 const BookingRequest = require('../../models/bookingRequest')
+const User = require('../../models/user')
 
 
 // --------------------------------------------------------------------------------------------------------------------------------
@@ -139,9 +140,37 @@ router.post("/booking-request", async (req, res) => {
         });
 
     } catch (error) {
+        console.log('Error in hostel booking :' ,error )
         res.status(500).json({ message: error.message });
     }
 });
 // --------------------------------------------------------------------------------------------------------------------------------
 
+// --------------------------------------------------------------------------------------------------------------------------------
+// Get all booking requests for logged-in student
+
+router.get("/my-requests/:registerNo", async (req, res) => {
+    try {
+
+        const { registerNo } = req.params;
+
+        const student = await User.findOne({ registerNo });
+
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        const requests = await BookingRequest.find({ studentId: student._id })
+            .populate("hostelId")
+            .populate("roomId")
+            .populate("bedId")
+            .sort({ createdAt: -1 });
+
+        res.json(requests);
+
+    } catch (error) {
+        console.log("Error fetching booking requests:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
 module.exports = router;
