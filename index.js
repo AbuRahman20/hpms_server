@@ -1,8 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
-const Bed = require("./models/bed");
-const BookingRequest = require("./models/bookingRequest");
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
@@ -51,35 +49,4 @@ app.listen(PORT, () => {
 
 // SAVE BOOKING REQUEST
 
-app.post("/api/student/booking-request", async (req, res) => {
-    try {
-        const { studentId, hostelId, roomId, bedId, message } = req.body;
 
-
-
-        // Check if bed still available
-        const bed = await Bed.findById(bedId);
-        if (!bed || bed.status !== "Available") {
-            return res.status(400).json({ message: "Bed not available" });
-        }
-
-        // Save booking request
-        const booking = new BookingRequest({
-            studentId,
-            hostelId,
-            roomId,
-            bedId,
-            message
-        });
-
-        await booking.save();
-
-        res.status(201).json({
-            message: "Booking Request Submitted",
-            booking
-        });
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});

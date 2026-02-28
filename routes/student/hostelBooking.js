@@ -3,6 +3,8 @@ const router = express.Router();
 const Hostel = require('../../models/hostel');
 const Room = require('../../models/room');
 const Bed = require('../../models/bed');
+const BookingRequest = require('../../models/bookingRequest')
+
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
@@ -102,8 +104,44 @@ router.get("/room/:roomId", async (req, res) => {
 
 // Save request in booking request table
 
+router.post("/booking-request", async (req, res) => {
+    try {
 
+        const { registerNo, hostelId, roomId, bedId, message } = req.body;
 
+        // Find student using registerNo
+        const student = await User.findOne({ registerNo });
+
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        // Check bed availability
+        const bed = await Bed.findById(bedId);
+        if (!bed || bed.status !== "Available") {
+            return res.status(400).json({ message: "Bed not available" });
+        }
+
+        //  Save booking request
+        const booking = new BookingRequest({
+            studentId: student._id,  // Save actual ObjectId
+            hostelId,
+            roomId,
+            bedId,
+            message
+        });
+
+        await booking.save();
+
+        res.status(201).json({
+            message: "Booking Request Submitted",
+            booking
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 // --------------------------------------------------------------------------------------------------------------------------------
 
 module.exports = router;
