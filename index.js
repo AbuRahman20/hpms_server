@@ -13,6 +13,7 @@ const hostelManagementRoutes = require("./routes/admin/hostelManagement");
 const roomAllocationRoutes = require("./routes/admin/roomAllocation");
 const bedManagementRoutes = require("./routes/admin/bedManagement");
 
+
 // Student Routes
 const hostelBookingRoutes = require("./routes/student/hostelBooking");
 const myBookingRequest = require("./routes/student/myBookingRequest");
