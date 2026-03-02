@@ -8,4 +8,4 @@ const hostelSchema = new mongoose.Schema({
     wardenName: { type: String },
 }, { timestamps: true });
 
-module.exports = mongoose.model("Hostel", hostelSchema);
+module.exports = mongoose.models.Hostel || mongoose.model("Hostel", hostelSchema);

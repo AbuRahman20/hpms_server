@@ -66,26 +66,6 @@ router.get("/all", async (req, res) => {
 
 
 // ===============================
-// GET ALL REQUESTS (ADMIN)
-// ===============================
-router.get("/all", async (req, res) => {
-    try {
-
-        const requests = await BookingRequest.find()
-            .populate("studentId", "name registerNo phone department")
-            .populate("hostelId", "hostelName location")
-            .populate("roomId", "roomNumber rentAmount")
-            .populate("bedId", "bedName status")
-            .sort({ createdAt: -1 });
-
-        res.status(200).json(requests);
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// ===============================
 // UPDATE STATUS (ADMIN)
 // ===============================
 

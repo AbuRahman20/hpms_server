@@ -1,24 +1,28 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const roomModel = require('../../models/room');
+const Room = require('../../models/room');
+const Hostel = require('../../models/hostel');
 
-// --------------------------------------------------------------------------------------------------------------------------------
-
-// Get rooms by hostel ID
-
-router.get('/api/rooms/:hostelId', async (req, res) => {
+// GET Rooms by hostelId (STRING like HSTL001)
+router.get("/api/rooms/:hostelId", async (req, res) => {
     try {
         const { hostelId } = req.params;
-        const rooms = await roomModel.find({ hostelId });
-        if (rooms.length === 0) {
-            return res.status(404).json({ message: "No rooms found for this hostel" });
+
+        // Step 1: Find hostel by hostelId string
+        const hostel = await Hostel.findOne({ hostelId });
+
+        if (!hostel) {
+            return res.status(404).json({ message: "Hostel not found" });
         }
-        res.status(200).json(rooms);
+
+        // Step 2: Find rooms using hostel _id
+        const rooms = await Room.find({ hostelId: hostel._id });
+
+        res.json(rooms);
+
     } catch (error) {
-        res.status(500).json({ message: "Error fetching rooms" });
+        res.status(500).json({ message: error.message });
     }
 });
-
-// --------------------------------------------------------------------------------------------------------------------------------
 
 module.exports = router;
