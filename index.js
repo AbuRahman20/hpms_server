@@ -12,6 +12,7 @@ const userAdministrationRoutes = require("./routes/admin/userAdministration");
 const hostelManagementRoutes = require("./routes/admin/hostelManagement");
 const roomAllocationRoutes = require("./routes/admin/roomAllocation");
 const bedManagementRoutes = require("./routes/admin/bedManagement");
+const bookingRequestRoutes = require("./routes/admin/bookingRequest");
 
 
 // Student Routes
@@ -35,7 +36,7 @@ app.use("/", userAdministrationRoutes);
 app.use("/", hostelManagementRoutes);
 app.use("/", roomAllocationRoutes);
 app.use("/", bedManagementRoutes);
-
+app.use("/", bookingRequestRoutes);
 // Student Routes
 app.use("/api/hostelBooking", hostelBookingRoutes);
 app.use("/api/myRequest", myBookingRequest);
