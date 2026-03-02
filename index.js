@@ -36,7 +36,7 @@ app.use("/", userAdministrationRoutes);
 app.use("/", hostelManagementRoutes);
 app.use("/", roomAllocationRoutes);
 app.use("/", bedManagementRoutes);
-app.use("/", bookingRequestRoutes);
+app.use("/api/booking", bookingRequestRoutes);
 // Student Routes
 app.use("/api/hostelBooking", hostelBookingRoutes);
 app.use("/api/myRequest", myBookingRequest);
