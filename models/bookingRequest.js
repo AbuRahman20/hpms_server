@@ -1,5 +1,3 @@
-// models/BookingRequest.js
-
 const mongoose = require("mongoose");
 
 const bookingRequestSchema = new mongoose.Schema({
