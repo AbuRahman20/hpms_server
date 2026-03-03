@@ -11,32 +11,32 @@ router.post("/all", async (req, res) => {
     try {
         const { studentId, hostelId, roomId, bedId } = req.body;
 
-        // Check if bed available
-        const bed = await Bed.findById(bedId);
-        if (!bed || bed.status !== "Available") {
-            return res.status(400).json({ message: "Bed not available" });
-        }
-
-        // Prevent duplicate pending request
+        // Prevent same student duplicate request
         const existing = await BookingRequest.findOne({
             studentId,
+            bedId,
             status: "Pending"
         });
 
         if (existing) {
-            return res.status(400).json({ message: "You already have pending request" });
+            return res.status(400).json({
+                message: "You already requested this bed"
+            });
         }
 
         const newRequest = new BookingRequest({
             studentId,
             hostelId,
             roomId,
-            bedId
+            bedId,
+            status: "Pending"
         });
 
         await newRequest.save();
 
-        res.status(201).json({ message: "Booking request sent successfully" });
+        res.status(201).json({
+            message: "Booking request sent successfully"
+        });
 
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -79,14 +79,40 @@ router.patch("/update/:id", async (req, res) => {
             return res.status(404).json({ message: "Request not found" });
         }
 
-        // If Approved → Update bed status
         if (status === "Approved") {
 
+            // 🔎 Find first pending request for this bed
+            const firstRequest = await BookingRequest.findOne({
+                bedId: request.bedId,
+                status: "Pending"
+            }).sort({ createdAt: 1 }); // oldest first
+
+            // ❌ If this is NOT the first request → block
+            if (!firstRequest || firstRequest._id.toString() !== request._id.toString()) {
+                return res.status(400).json({
+                    message: "Only the first student who booked this bed can be approved."
+                });
+            }
+
+            // 🔴 Check if bed already booked
+            const bed = await Bed.findById(request.bedId);
+
+            if (bed.status === "Booked") {
+                return res.status(400).json({
+                    message: "This bed is already booked."
+                });
+            }
+
+            // ✅ Approve first request
+            request.status = "Approved";
+            await request.save();
+
+            // ✅ Mark bed as booked
             await Bed.findByIdAndUpdate(request.bedId, {
                 status: "Booked"
             });
 
-            // Reject all other pending requests for same bed
+            // ✅ Reject all other pending requests
             await BookingRequest.updateMany(
                 {
                     bedId: request.bedId,
@@ -95,18 +121,23 @@ router.patch("/update/:id", async (req, res) => {
                 },
                 { status: "Rejected" }
             );
+
+            return res.status(200).json({
+                message: "First student approved. Others rejected automatically."
+            });
         }
 
+        // If manually rejecting
         request.status = status;
         await request.save();
 
-        res.status(200).json({ message: "Status updated successfully" });
+        res.status(200).json({
+            message: "Status updated successfully"
+        });
 
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
-
-
 
 module.exports = router;
