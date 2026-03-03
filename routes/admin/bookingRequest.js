@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
-
 const BookingRequest = require('../../models/bookingRequest');
 const Bed = require('../../models/bed');
 
 // ===============================
 // CREATE BOOKING REQUEST
 // ===============================
+
 router.post("/all", async (req, res) => {
+
     try {
+
         const { studentId, hostelId, roomId, bedId } = req.body;
 
         // Prevent same student duplicate request
@@ -25,18 +27,14 @@ router.post("/all", async (req, res) => {
         }
 
         const newRequest = new BookingRequest({
-            studentId,
-            hostelId,
-            roomId,
-            bedId,
+            studentId, hostelId,
+            roomId, bedId,
             status: "Pending"
         });
 
         await newRequest.save();
 
-        res.status(201).json({
-            message: "Booking request sent successfully"
-        });
+        res.status(201).json({ message: "Booking request sent successfully" });
 
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -47,7 +45,9 @@ router.post("/all", async (req, res) => {
 // ===============================
 // GET ALL REQUESTS (ADMIN)
 // ===============================
+
 router.get("/all", async (req, res) => {
+
     try {
 
         const requests = await BookingRequest.find()
@@ -70,7 +70,9 @@ router.get("/all", async (req, res) => {
 // ===============================
 
 router.patch("/update/:id", async (req, res) => {
+
     try {
+
         const { status } = req.body;
 
         const request = await BookingRequest.findById(req.params.id);
@@ -79,23 +81,15 @@ router.patch("/update/:id", async (req, res) => {
             return res.status(404).json({ message: "Request not found" });
         }
 
+        // ✅ If approving the request
         if (status === "Approved") {
-
-            // 🔎 Find first pending request for this bed
-            const firstRequest = await BookingRequest.findOne({
-                bedId: request.bedId,
-                status: "Pending"
-            }).sort({ createdAt: 1 }); // oldest first
-
-            // ❌ If this is NOT the first request → block
-            if (!firstRequest || firstRequest._id.toString() !== request._id.toString()) {
-                return res.status(400).json({
-                    message: "Only the first student who booked this bed can be approved."
-                });
-            }
 
             // 🔴 Check if bed already booked
             const bed = await Bed.findById(request.bedId);
+
+            if (!bed) {
+                return res.status(404).json({ message: "Bed not found" });
+            }
 
             if (bed.status === "Booked") {
                 return res.status(400).json({
@@ -103,39 +97,38 @@ router.patch("/update/:id", async (req, res) => {
                 });
             }
 
-            // ✅ Approve first request
+            // ✅ Approve selected request
             request.status = "Approved";
             await request.save();
 
             // ✅ Mark bed as booked
-            await Bed.findByIdAndUpdate(request.bedId, {
-                status: "Booked"
-            });
+            bed.status = "Booked";
+            await bed.save();
 
-            // ✅ Reject all other pending requests
+            // ✅ Reject all other requests for same bed
             await BookingRequest.updateMany(
                 {
                     bedId: request.bedId,
-                    _id: { $ne: request._id },
-                    status: "Pending"
+                    _id: { $ne: request._id }
                 },
                 { status: "Rejected" }
             );
 
             return res.status(200).json({
-                message: "First student approved. Others rejected automatically."
+                message: "Request approved and other requests rejected successfully."
             });
         }
 
-        // If manually rejecting
+        // ✅ If manually rejecting
         request.status = status;
         await request.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Status updated successfully"
         });
 
     } catch (error) {
+        console.error("Error in updating status:", error);
         res.status(500).json({ message: error.message });
     }
 });
