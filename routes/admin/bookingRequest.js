@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const BookingRequest = require('../../models/bookingRequest');
 const Bed = require('../../models/bed');
-
+const Allocation = require("../../models/allocation");
 // ===============================
 // CREATE BOOKING REQUEST
 // ===============================
@@ -81,10 +81,8 @@ router.patch("/update/:id", async (req, res) => {
             return res.status(404).json({ message: "Request not found" });
         }
 
-        // ✅ If approving the request
         if (status === "Approved") {
 
-            // 🔴 Check if bed already booked
             const bed = await Bed.findById(request.bedId);
 
             if (!bed) {
@@ -97,38 +95,45 @@ router.patch("/update/:id", async (req, res) => {
                 });
             }
 
-            // ✅ Approve selected request
+            // ✅ Update request status
             request.status = "Approved";
             await request.save();
 
-            // ✅ Mark bed as booked
+            // ✅ Update bed status
             bed.status = "Booked";
             await bed.save();
 
-            // ✅ Reject all other requests for same bed
+            // ⭐ CREATE ALLOCATION RECORD
+            const allocation = new Allocation({
+                studentId: request.studentId,
+                hostelId: request.hostelId,
+                roomId: request.roomId,
+                bedId: request.bedId,
+                status: "Active",
+                allocatedDate: new Date(),
+                allocatedBy: "Admin"
+            });
+
+            await allocation.save();
+
+            // Reject other requests for same bed
             await BookingRequest.updateMany(
-                {
-                    bedId: request.bedId,
-                    _id: { $ne: request._id }
-                },
+                { bedId: request.bedId, _id: { $ne: request._id } },
+                { status: "Rejected" }
+            );
+
+            // Reject other requests of same student
+            await BookingRequest.updateMany(
+                { studentId: request.studentId, _id: { $ne: request._id } },
                 { status: "Rejected" }
             );
 
             return res.status(200).json({
-                message: "Request approved and other requests rejected successfully."
+                message: "Request approved and stored in Allocation"
             });
         }
 
-        // ✅ If manually rejecting
-        request.status = status;
-        await request.save();
-
-        return res.status(200).json({
-            message: "Status updated successfully"
-        });
-
     } catch (error) {
-        console.error("Error in updating status:", error);
         res.status(500).json({ message: error.message });
     }
 });

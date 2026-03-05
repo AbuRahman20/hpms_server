@@ -1,20 +1,16 @@
 const express = require("express");
 const router = express.Router();
-
 const Allocation = require("../../models/allocation");
-const Bed = require("../../models/bed");
 
-
-// ===============================
-// GET ALL ALLOCATIONS
-// ===============================
 router.get("/all", async (req, res) => {
+
     try {
+
         const allocations = await Allocation.find()
+            .populate("studentId", "name registerNo")
             .populate("hostelId", "hostelName")
             .populate("roomId", "roomNumber")
-            .populate("bedId", "bedName status")
-            .sort({ allocationDate: -1 });
+            .populate("bedId", "bedName");
 
         res.status(200).json(allocations);
 
@@ -23,37 +19,22 @@ router.get("/all", async (req, res) => {
     }
 });
 
-
-// ===============================
-// VACATE
-// ===============================
 router.patch("/vacate/:id", async (req, res) => {
-    try {
-        const allocation = await Allocation.findById(req.params.id);
 
-        if (!allocation) {
-            return res.status(404).json({ message: "Allocation not found" });
-        }
+    const allocation = await Allocation.findById(req.params.id);
 
-        if (allocation.status === "Vacated") {
-            return res.status(400).json({ message: "Already vacated" });
-        }
-
-        // 1️⃣ Update allocation
-        allocation.status = "Vacated";
-        allocation.vacateDate = new Date();
-        await allocation.save();
-
-        // 2️⃣ Update bed status
-        await Bed.findByIdAndUpdate(allocation.bedId, {
-            status: "Available"
-        });
-
-        res.status(200).json({ message: "Vacated successfully" });
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    if (!allocation) {
+        return res.status(404).json({ message: "Allocation not found" });
     }
+
+    allocation.status = "Vacated";
+    allocation.vacatedDate = new Date();
+
+    await allocation.save();
+
+    res.json({ message: "Student vacated successfully" });
+
 });
+
 
 module.exports = router;
