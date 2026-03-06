@@ -1,47 +1,74 @@
 const express = require('express');
 const router = express.Router();
-const hostelModel = require('../../models/hostel');
-const roomModel = require('../../models/room');
+const Hostel = require('../../models/hostel');
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-// Fetch all hostels
+// GET all hostels
 
 router.get('/fetchhosteldata', async (req, res) => {
     try {
-        const data = await hostelModel.find();
-        res.json(data);
+        const hostels = await Hostel.find().sort({ createdAt: -1 });
+        res.json(hostels);
     } catch (error) {
-        console.error("Error in fetching hostel data : ", error);
-        return res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: error.message });
     }
 });
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-// Delete hostel
+// POST create a new hostel
 
-router.post('/deletehostel', async (req, res) => {
-    const { hostelId } = req.body;
+router.post('/addhostel', async (req, res) => {
+
     try {
-        await hostelModel.deleteOne({ hostelId: hostelId });
+        const { hostelId, hostelName, location, totalRooms, wardenName } = req.body;
+        const newHostel = new Hostel({
+            hostelId,
+            hostelName,
+            location,
+            totalRooms,
+            wardenName
+        });
+        await newHostel.save();
+        res.status(201).json(newHostel);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
+// PUT update a hostel
+
+router.put('/updatehostel/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        const updatedHostel = await Hostel.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+        if (!updatedHostel) {
+            return res.status(404).json({ message: 'Hostel not found' });
+        }
+        res.json(updatedHostel);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
+// DELETE a hostel
+
+router.delete('/deletehostel/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedHostel = await Hostel.findByIdAndDelete(id);
+        if (!deletedHostel) {
+            return res.status(404).json({ message: 'Hostel not found' });
+        }
         res.json({ message: 'Hostel deleted successfully' });
     } catch (error) {
-        console.error("Error in deleting hostel : ", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-// --------------------------------------------------------------------------------------------------------------------------------
-
-// Get all hostels for dropdown
-
-router.get('/api/hostels', async (req, res) => {
-    try {
-        const hostels = await hostelModel.find();
-        res.status(200).json(hostels);
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch hostels" });
+        res.status(500).json({ message: error.message });
     }
 });
 
