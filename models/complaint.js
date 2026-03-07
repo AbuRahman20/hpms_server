@@ -34,9 +34,7 @@ const complaintSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
-    resolvedDate: {
-        type: Date
-    }
+    resolvedDate: { type: Date }
 }, { timestamps: true });
 
 module.exports = mongoose.models.Complaint || mongoose.model("Complaint", complaintSchema);

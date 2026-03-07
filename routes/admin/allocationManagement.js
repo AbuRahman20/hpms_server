@@ -4,13 +4,12 @@ const Allocation = require("../../models/allocation");
 const Bed = require("../../models/bed");
 const Hostel = require("../../models/hostel");
 const Room = require("../../models/room");
+const User = require("../../models/user");
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
 router.get("/all", async (req, res) => {
-
     try {
-
         const allocations = await Allocation.find()
             .populate("studentId", "name registerNo")
             .populate("hostelId", "hostelName")
@@ -18,7 +17,6 @@ router.get("/all", async (req, res) => {
             .populate("bedId", "bedName");
 
         res.status(200).json(allocations);
-
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -27,20 +25,14 @@ router.get("/all", async (req, res) => {
 // --------------------------------------------------------------------------------------------------------------------------------
 
 router.patch("/vacate/:id", async (req, res) => {
-
     const allocation = await Allocation.findById(req.params.id);
-
     if (!allocation) {
         return res.status(404).json({ message: "Allocation not found" });
     }
-
     allocation.status = "Vacated";
     allocation.vacatedDate = new Date();
-
     await allocation.save();
-
     res.json({ message: "Student vacated successfully" });
-
 });
 
 // --------------------------------------------------------------------------------------------------------------------------------
@@ -119,11 +111,105 @@ router.get('/with-status', async (req, res) => {
             },
             { $sort: { 'hostel.hostelName': 1, 'room.roomNumber': 1, bedName: 1 } }
         ]);
-
         res.json(beds);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
+router.get("/students/unallocated", async (req, res) => {
+
+    try {
+
+        const unallocatedStudents = await User.aggregate([
+            { $match: { role: "student" } },
+            {
+                $lookup: {
+                    from: "allocations",
+                    let: { studentId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$studentId", "$$studentId"] },
+                                status: "Active"
+                            }
+                        }
+                    ],
+                    as: "activeAllocation"
+                }
+            },
+            { $match: { activeAllocation: { $size: 0 } } },
+            { $project: { name: 1, registerNo: 1, email: 1 } }
+        ]);
+        res.json(unallocatedStudents);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// --------------------------------------------------------------------------------------------------------------------------------
+
+router.post("/allocate", async (req, res) => {
+
+    const { studentId, bedId } = req.body;   
+
+    try {
+
+        // 1. Verify the bed exists and get its roomId
+        const bed = await Bed.findById(bedId).populate('roomId');
+        if (!bed) {
+            return res.status(404).json({ message: "Bed not found" });
+        }
+
+        const room = bed.roomId;
+        if (!room) {
+            return res.status(400).json({ message: "Bed is not associated with a room" });
+        }
+
+        const hostelId = room.hostelId; 
+
+        // 2. Check if bed is already occupied
+        const existingAllocation = await Allocation.findOne({
+            bedId,
+            status: "Active"
+        });
+        if (existingAllocation) {
+            return res.status(400).json({ message: "Bed is already occupied" });
+        }
+
+        // 3. Check if student already has an active allocation
+        const studentAllocation = await Allocation.findOne({
+            studentId,
+            status: "Active"
+        });
+        if (studentAllocation) {
+            return res.status(400).json({ message: "Student already has an active allocation" });
+        }
+
+        // 4. Create new allocation
+        const newAllocation = new Allocation({
+            studentId,
+            bedId,
+            roomId: room._id,
+            hostelId,
+            allocatedDate: new Date(),
+            status: "Active"
+        });
+
+        await newAllocation.save();
+
+        res.status(201).json({
+            message: "Allocation created successfully",
+            allocation: newAllocation
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// --------------------------------------------------------------------------------------------------------------------------------
 
 module.exports = router;

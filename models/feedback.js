@@ -11,18 +11,16 @@ const feedbackSchema = new mongoose.Schema({
         ref: "Hostel",
         required: true
     },
+    complaintId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Complaint",
+        required: true
+    },
     rating: {
         type: Number,
-        min: 1,
-        max: 5
+        min: 1, max: 5
     },
-    message: {
-        type: String
-    },
-    category: {
-        type: String,
-        enum: ["Food", "Cleanliness", "Security", "Facilities", "Management", "Other"]
-    }
+    message: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.models.Feedback || mongoose.model("Feedback", feedbackSchema);
