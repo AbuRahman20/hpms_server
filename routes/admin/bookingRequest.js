@@ -3,6 +3,8 @@ const router = express.Router();
 const BookingRequest = require('../../models/bookingRequest');
 const Bed = require('../../models/bed');
 const Allocation = require("../../models/allocation");
+const User = require('../../models/user');
+
 // ===============================
 // CREATE BOOKING REQUEST
 // ===============================
@@ -69,22 +71,24 @@ router.get("/all", async (req, res) => {
 // UPDATE STATUS (ADMIN)
 // ===============================
 
-router.patch("/update/:id", async (req, res) => {
+router.patch("/update/:id/:registerNo", async (req, res) => {
 
     try {
 
         const { status } = req.body;
 
-        const request = await BookingRequest.findById(req.params.id);
+        const user = await User.findOne({ registerNo: req.params.registerNo });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
+        const request = await BookingRequest.findById(req.params.id);
         if (!request) {
             return res.status(404).json({ message: "Request not found" });
         }
 
         if (status === "Approved") {
-
             const bed = await Bed.findById(request.bedId);
-
             if (!bed) {
                 return res.status(404).json({ message: "Bed not found" });
             }
@@ -95,15 +99,26 @@ router.patch("/update/:id", async (req, res) => {
                 });
             }
 
-            // ✅ Approve selected request
+            // Extra safety: check if an active allocation already exists for this bed
+            const existingAllocation = await Allocation.findOne({
+                bedId: request.bedId,
+                status: "Active"
+            });
+            if (existingAllocation) {
+                return res.status(400).json({
+                    message: "Bed is already allocated to someone."
+                });
+            }
+
+            // 1. Approve the selected request
             request.status = "Approved";
             await request.save();
 
-            // ✅ Mark bed booked
+            // 2. Mark the bed as booked
             bed.status = "Booked";
             await bed.save();
 
-            // ✅ Reject other requests for SAME BED
+            // 3. Reject all other requests for the same bed
             await BookingRequest.updateMany(
                 {
                     bedId: request.bedId,
@@ -112,7 +127,7 @@ router.patch("/update/:id", async (req, res) => {
                 { status: "Rejected" }
             );
 
-            // ⭐ Reject all OTHER requests of SAME STUDENT
+            // 4. Reject all other requests from the same student
             await BookingRequest.updateMany(
                 {
                     studentId: request.studentId,
@@ -121,14 +136,26 @@ router.patch("/update/:id", async (req, res) => {
                 { status: "Rejected" }
             );
 
+            // 5. Create a new allocation record
+            const allocation = new Allocation({
+                studentId: request.studentId,
+                hostelId: request.hostelId,
+                roomId: request.roomId,
+                bedId: request.bedId,
+                allocatedBy: user._id,       
+                allocationDate: new Date(),
+                status: "Active"
+            });
+            await allocation.save();
+
             return res.status(200).json({
-                message: "Request approved. Other student requests rejected."
+                message: "Request approved. Allocation created, other requests rejected."
             });
         }
 
     } catch (error) {
+        console.error("Error in updaing status")
         res.status(500).json({ message: error.message });
     }
 });
-
 module.exports = router;
