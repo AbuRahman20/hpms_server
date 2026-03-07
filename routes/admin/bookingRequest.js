@@ -95,41 +95,34 @@ router.patch("/update/:id", async (req, res) => {
                 });
             }
 
-            // ✅ Update request status
+            // ✅ Approve selected request
             request.status = "Approved";
             await request.save();
 
-            // ✅ Update bed status
+            // ✅ Mark bed booked
             bed.status = "Booked";
             await bed.save();
 
-            // ⭐ CREATE ALLOCATION RECORD
-            const allocation = new Allocation({
-                studentId: request.studentId,
-                hostelId: request.hostelId,
-                roomId: request.roomId,
-                bedId: request.bedId,
-                status: "Active",
-                allocatedDate: new Date(),
-                allocatedBy: "Admin"
-            });
-
-            await allocation.save();
-
-            // Reject other requests for same bed
+            // ✅ Reject other requests for SAME BED
             await BookingRequest.updateMany(
-                { bedId: request.bedId, _id: { $ne: request._id } },
+                {
+                    bedId: request.bedId,
+                    _id: { $ne: request._id }
+                },
                 { status: "Rejected" }
             );
 
-            // Reject other requests of same student
+            // ⭐ Reject all OTHER requests of SAME STUDENT
             await BookingRequest.updateMany(
-                { studentId: request.studentId, _id: { $ne: request._id } },
+                {
+                    studentId: request.studentId,
+                    _id: { $ne: request._id }
+                },
                 { status: "Rejected" }
             );
 
             return res.status(200).json({
-                message: "Request approved and stored in Allocation"
+                message: "Request approved. Other student requests rejected."
             });
         }
 
